@@ -159,6 +159,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webki
   <div class="modepick">
     <div class="seg" role="group">
       <button data-mode="type" aria-pressed="true">Type</button>
+      <button data-mode="short" aria-pressed="false">Shortcut</button>
       <button data-mode="recall" aria-pressed="false">Recall</button>
     </div>
     <div class="why" id="modeWhy"></div>
@@ -526,7 +527,8 @@ document.getElementById('themeBtn').onclick = ()=>{
 let MODE = 'type';
 try { MODE = localStorage.getItem('conft.mode') || 'type'; } catch(e){}
 const WHY = {
-  type: 'คำสั่งเต็มขึ้นเป็นเงาให้พิมพ์ทับ เน้นสร้าง muscle memory และความเร็ว',
+  type: 'คำสั่งเต็มขึ้นเป็นเงาให้พิมพ์ทับ จะพิมพ์ตัวย่อแทนก็ได้ เช่น conf t',
+  short: 'เงาเป็นตัวย่อที่ใช้จริงในแล็บ เช่น en, conf t, int g0/0, no shut, sh ip int br',
   recall: 'เห็นแค่โจทย์ ต้องพิมพ์จากความจำ ย่อแบบ IOS ได้ เช่น conf t, int g0/0, no shut'
 };
 const $ = id => document.getElementById(id);
@@ -548,14 +550,14 @@ function weakSteps(){
 function bestText(id){
   const b = DB.best[id+'|'+MODE];
   if (!b) return '';
-  return MODE==='type' ? `<b>${b.wpm}</b> wpm<br>${b.acc}%` : `<b>${b.ok}/${b.n}</b><br>ถูกรอบแรก`;
+  return MODE!=='recall' ? `<b>${b.wpm}</b> wpm<br>${b.acc}%` : `<b>${b.ok}/${b.n}</b><br>ถูกรอบแรก`;
 }
 function renderList(){
   const weak = weakSteps();
   let h = LESSONS.map((L,i)=>`
     <button class="row" data-id="${L.id}">
       <span class="n">${String(i+1).padStart(2,'0')}</span>
-      <span><div class="t">${L.title}</div><div class="d">${L.th}</div><div class="ex">${L.steps.filter(s=>!isSpecial(s)).slice(1,4).map(s=>s.d).join('   ')}</div></span>
+      <span><div class="t">${L.title}</div><div class="d">${L.th}</div><div class="ex">${L.steps.filter(s=>!isSpecial(s)).slice(1,4).map(s=>MODE==='short'?shortOf(s):s.d).join('   ')}</div></span>
       <span class="s">${bestText(L.id)}</span>
     </button>`).join('');
   h += `<button class="row" data-id="mix">
@@ -583,7 +585,7 @@ function start(id){
   $('home').hidden = true; $('play').hidden = false; $('stage').hidden = false; $('result').hidden = true;
   $('pTitle').textContent = L.title;
   hist.innerHTML = '';
-  $('keys').innerHTML = MODE==='type'
+  $('keys').innerHTML = MODE!=='recall'
     ? '<span><kbd>Tab</kbd>เติมคำ</span><span><kbd>Esc</kbd>กลับ</span>'
     : '<span><kbd>Tab</kbd>เติมคำแบบ IOS</span><span><kbd>?</kbd>ใบ้คำถัดไป</span><span><kbd>Esc</kbd>กลับ</span>';
   $('hintBtn').hidden = $('ansBtn').hidden = MODE!=='recall';
@@ -594,7 +596,7 @@ function start(id){
 function step(){ return G.L.steps[G.i]; }
 function loadStep(){
   const s = step();
-  G.typed=''; kb.value=''; G.attempts=0; G.hint=0; G.reveal = MODE==='type'; G.tStep=0;
+  G.typed=''; kb.value=''; G.attempts=0; G.hint=0; G.reveal = false; G.tStep=0;
   $('task').innerHTML = `<span>${s.t}</span>`;
   $('fb').textContent=''; $('fb').className='fb';
   renderLadder(); renderLine(); renderStats();
@@ -603,6 +605,32 @@ function loadStep(){
 function curPrompt(){ const s=step(); return s.p ? s.p+' ' : promptOf(s.before); }
 function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 
+const SHORT = {configure:'conf', terminal:'t', interface:'int', shutdown:'shut', address:'add', show:'sh', brief:'br', 'running-config':'run', 'startup-config':'start', description:'desc', switchport:'sw', password:'pass'};
+function shortOf(s){
+  if (s.s || s.p || s.c==='') return s.d;
+  if (s.d==='enable') return 'en';
+  return s.d.split(' ').map(w=>SHORT[w]||w).join(' ');
+}
+const guided = ()=> MODE!=='recall' || G.reveal;
+function wordsOf(){ const s=step(); return {F:s.d.split(' '), W:(MODE==='short' ? shortOf(s) : s.d).split(' ')}; }
+// is the user's i-th word consistent with the target (full word, shortcut, or IOS abbreviation)?
+function wordOk(u, i, done, F, W){
+  const f = F[i]; if (f===undefined) return false;
+  const ul = u.toLowerCase(), fl = f.toLowerCase();
+  const tm = f.match(/^([a-z]+)(\d[\d\/.]*)$/i), um = u.match(/^([a-z]+)(\d[\d\/.]*)?$/i);
+  if (tm && ifName(tm[1])){
+    if (fl.startsWith(ul)) return !done || ul===fl;
+    if (um && ifName(um[1])===ifName(tm[1])) return tm[2].startsWith(um[2]||'') && (!done || um[2]===tm[2]);
+    return false;
+  }
+  if (done && /[\d.:A-Z#{]/.test(f)) return ul===fl;
+  return fl.startsWith(ul) || W[i].toLowerCase().startsWith(ul);
+}
+function lineOk(v){
+  const s = step(); if (s.s || s.c==='') return s.d.startsWith(v);
+  const {F,W} = wordsOf(), w = v.split(' ');
+  return w.every((x,i)=> (x==='' && i<w.length-1) || wordOk(x,i,i<w.length-1,F,W));
+}
 function ghostText(){
   const s = step();
   if (G.reveal) return s.d;
@@ -615,7 +643,24 @@ function renderLine(){
   let h = `<span class="p">${esc(curPrompt())}</span>`;
   const show = ch => s.s ? '•' : ch;
   const g = ghostText();
-  if (MODE==='type' || G.reveal){
+  if (guided() && !s.s && s.c!==''){
+    const {F,W} = wordsOf(), words = typed.split(' ');
+    words.forEach((w,i)=>{
+      const last = i===words.length-1;
+      if (i) h += `<span class="${w==='' && !last ? 'er' : 'ok'}">${w==='' && !last ? '·' : ' '}</span>`;
+      if (w) h += `<span class="${wordOk(w,i,!last,F,W)?'ok':'er'}">${esc(w)}</span>`;
+    });
+    h += '<span class="mk" id="mk"></span>';
+    const k = words.length-1, cw = words[k];
+    let tail = '';
+    if (W[k]!==undefined && wordOk(cw,k,false,F,W)){
+      if (W[k].toLowerCase().startsWith(cw.toLowerCase())) tail = W[k].slice(cw.length);
+      else if (F[k].toLowerCase().startsWith(cw.toLowerCase())) tail = F[k].slice(cw.length);
+    }
+    if (k+1 < W.length) tail += (cw==='' && k>0 ? '' : ' ') + W.slice(k+1).join(' ');
+    if (cw==='' && k>0 && k<W.length) tail = W.slice(k).join(' ');
+    if (tail) h += `<span class="gh">${esc(tail)}</span>`;
+  } else if (guided()){
     const tgt = s.d;
     for (let i=0;i<typed.length;i++){
       const ok = typed[i]===tgt[i];
@@ -648,11 +693,11 @@ function wpm(){ const min = (G.active + (G.tStep? (performance.now()-G.tStep):0)
 function acc(){ return G.keys ? Math.round((G.keys-G.errs)/G.keys*100) : 100; }
 function renderStats(){
   const n = G.L.steps.length;
-  $('stats').innerHTML = MODE==='type'
+  $('stats').innerHTML = MODE!=='recall'
     ? `<div class="stat"><div class="v">${wpm()}</div><div class="k">WPM</div></div><div class="stat"><div class="v">${acc()}%</div><div class="k">ACC</div></div>`
     : `<div class="stat"><div class="v">${Math.min(G.i+1,n)}/${n}</div><div class="k">STEP</div></div><div class="stat"><div class="v">${G.missed.size}</div><div class="k">MISS</div></div>`;
 }
-setInterval(()=>{ if (G && !G.done && MODE==='type' && !$('play').hidden) renderStats(); }, 1000);
+setInterval(()=>{ if (G && !G.done && MODE!=='recall' && !$('play').hidden) renderStats(); }, 1000);
 
 function addHist(html, cls){ const d=document.createElement('div'); d.className=cls; d.innerHTML=html; hist.appendChild(d); }
 function scrollTerm(){ requestAnimationFrame(()=>{ term.scrollTop = term.scrollHeight; }); }
@@ -666,7 +711,7 @@ kb.addEventListener('input', ()=>{
   if (v.length > G.typed.length){
     for (let i=G.typed.length;i<v.length;i++){
       G.keys++;
-      if ((MODE==='type'||G.reveal) && v[i]!==s.d[i]) G.errs++;
+      if (guided() && !lineOk(v.slice(0,i+1))) G.errs++;
     }
   }
   G.typed = v;
@@ -689,10 +734,11 @@ term.addEventListener('click', ()=>kb.focus({preventScroll:true}));
 function complete(){
   const s = step(), v = G.typed;
   if (s.s || !v || v.endsWith(' ')) return;
-  if (MODE==='type' || G.reveal){
-    if (!s.d.startsWith(v)) return;
-    let j = s.d.indexOf(' ', v.length); j = j<0 ? s.d.length : j+1;
-    setTyped(s.d.slice(0,j));
+  if (guided()){
+    const {F,W} = wordsOf(), words = v.split(' '), k = words.length-1;
+    if (!wordOk(words[k],k,false,F,W)) return;
+    words[k] = F[k];
+    setTyped(words.join(' ') + (k < F.length-1 ? ' ' : ''));
     return;
   }
   // IOS-like: complete the keyword the user is in the middle of
@@ -716,14 +762,12 @@ function reveal(){ const s=step(); G.reveal = true; G.missed.add(s.key); $('fb')
 
 function submit(){
   const s = step(), v = G.typed;
-  const exact = MODE==='type' || G.reveal;
-  const r = exact ? (v===s.d ? {ok:1} : {err:'type'}) : check(v, s);
+  const r = check(v, s);
   const shown = s.s ? '' : esc(v);
   if (!r.ok){
     term.classList.remove('shake'); void term.offsetWidth; term.classList.add('shake');
-    if (exact){ $('fb').className='fb bad'; $('fb').textContent = 'ยังไม่ตรง ลบตัวสีแดงแล้วพิมพ์ใหม่'; return; }
-    G.attempts++; G.missed.add(s.key);
-    addHist(`<span class="p">${esc(curPrompt())}</span><span class="c">${shown}</span>`, 'l bad');
+    const recall = MODE==='recall';
+    if (recall){ G.attempts++; G.missed.add(s.key); addHist(`<span class="p">${esc(curPrompt())}</span><span class="c">${shown}</span>`, 'l bad'); }
     const pad = ' '.repeat(curPrompt().length + (r.pos||0));
     let msg = '', th = '';
     if (r.err==='incomplete'){ msg = '% Incomplete command.'; th = 'คำสั่งยังไม่ครบ ยังขาดส่วนท้าย'; }
@@ -731,6 +775,7 @@ function submit(){
     else if (r.err==='value'){ msg = pad+'^\n% Invalid input detected at \'^\' marker.'; th = `ใช้ <code>${esc(r.have)}</code> แต่โจทย์ต้องการ <code>${esc(r.want)}</code>`; }
     else if (r.err==='secret'){ msg = '% Bad passwords'; th = 'รหัสไม่ถูก ลองดูในโจทย์อีกที'; }
     else { msg = pad+'^\n% Invalid input detected at \'^\' marker.'; th = 'คำสั่งผิดตรงตำแหน่ง ^'; }
+    if (!recall){ $('fb').className='fb bad'; $('fb').innerHTML = th + ' ลบคำสีแดงแล้วพิมพ์ใหม่'; return; }
     addHist(esc(msg), 'e');
     if (G.attempts>=2 && !G.reveal){ G.reveal = true; th += ' — เฉลยขึ้นเป็นเงาแล้ว พิมพ์ตามได้เลย'; }
     $('fb').className='fb bad'; $('fb').innerHTML = th;
@@ -738,7 +783,7 @@ function submit(){
     return;
   }
   // success
-  if (G.tStep){ G.active += performance.now()-G.tStep; G.chars += s.d.length+1; G.tStep = 0; }
+  if (G.tStep){ G.active += performance.now()-G.tStep; G.chars += v.length+1; G.tStep = 0; }
   if (MODE==='recall'){
     if (!G.missed.has(s.key)){ G.firstOk++; if (DB.weak[s.key]) DB.weak[s.key]--; }
     else DB.weak[s.key] = (DB.weak[s.key]||0)+1;
@@ -758,7 +803,7 @@ function finish(){
   const n = G.L.steps.length, key = G.L.id+'|'+MODE, prev = DB.best[key];
   const time = Math.round(G.active/1000), mm = Math.floor(time/60), ss = String(time%60).padStart(2,'0');
   let rec = false;
-  if (MODE==='type'){
+  if (MODE!=='recall'){
     const res = {wpm:wpm(), acc:acc()};
     if (!prev || res.wpm > prev.wpm){ DB.best[key] = res; rec = !!prev; }
   } else {
@@ -768,13 +813,13 @@ function finish(){
   store.set(DB);
   const missed = G.L.steps.filter(s=>G.missed.has(s.key));
   const idx = LESSONS.findIndex(x=>x.id===G.L.id), next = LESSONS[idx+1];
-  const big = MODE==='type'
+  const big = MODE!=='recall'
     ? `<div><div class="v">${wpm()}<small>wpm</small></div><div class="k">ความเร็ว</div></div><div><div class="v">${acc()}<small>%</small></div><div class="k">ความแม่น</div></div><div><div class="v">${mm}:${ss}</div><div class="k">เวลาพิมพ์</div></div>`
     : `<div><div class="v">${G.firstOk}<small>/ ${n}</small></div><div class="k">ถูกตั้งแต่ครั้งแรก</div></div><div><div class="v">${missed.length}</div><div class="k">คำสั่งที่พลาด</div></div><div><div class="v">${mm}:${ss}</div><div class="k">เวลา</div></div>`;
-  const head = MODE==='type'
+  const head = MODE!=='recall'
     ? (rec ? 'สถิติใหม่ของบทนี้' : 'จบบทแล้ว')
     : (G.firstOk===n ? 'จำได้ครบทุกคำสั่ง' : 'จบบทแล้ว');
-  const sub = MODE==='type'
+  const sub = MODE!=='recall'
     ? 'พิมพ์คล่องแล้วลองโหมด Recall ดูว่าจำได้เองไหม'
     : (missed.length ? 'คำสั่งที่พลาดถูกเก็บไว้ในหมวด Weak spots แล้ว' : 'พร้อมสอบส่วนนี้แล้ว');
   $('stage').hidden = true;
@@ -783,11 +828,11 @@ function finish(){
     ${missed.length ? `<div class="missed">${missed.map(s=>`<div><code>${esc(s.d||'↵')}</code><span>${s.t.replace(/<[^>]+>/g,'')}</span></div>`).join('')}</div>` : ''}
     <div class="actions">
       <button class="btn primary" id="again">อีกรอบ</button>
-      <button class="btn" id="swap">${MODE==='type'?'ลองโหมด Recall':'กลับไปโหมด Type'}</button>
+      <button class="btn" id="swap">${MODE!=='recall'?'ลองโหมด Recall':'กลับไปโหมด Type'}</button>
       ${next && !G.L.mixed ? `<button class="btn" id="next">บทถัดไป: ${next.title}</button>` : ''}
     </div>`;
   $('again').onclick = ()=>start(G.L.id);
-  $('swap').onclick = ()=>{ setMode(MODE==='type'?'recall':'type'); start(G.L.id==='weak'&&!weakSteps().length?'mix':G.L.id); };
+  $('swap').onclick = ()=>{ setMode(MODE!=='recall'?'recall':'type'); start(G.L.id==='weak'&&!weakSteps().length?'mix':G.L.id); };
   if ($('next')) $('next').onclick = ()=>start(next.id);
   kb.blur();
   window.scrollTo({top:0, behavior:'smooth'});
