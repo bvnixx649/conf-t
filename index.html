@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>conf t</title>
+<meta name="description" content="ฝึกพิมพ์คำสั่ง Cisco IOS ให้คล่อง — config, routing, telnet, ACL">
+<meta name="theme-color" content="#0b0b0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23141518'/%3E%3Ctext x='6' y='22' font-family='monospace' font-size='15' font-weight='700' fill='%23f5c451'%3E%23_%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f2; --fg:#16171a; --mute:#6c6f77; --faint:#a3a5ab; --line:#e4e2dd; --hover:#eeece7;
+  --accent:#b45309; --accent-soft:#f3e3c8;
+  --term:#121316; --t-fg:#e9e7e3; --t-ghost:#50535c; --t-out:#9a9fa8; --t-prompt:#f5c451; --t-err:#ff6b6b; --t-ok:#7ee0a1;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b0b0c; --fg:#ecebe8; --mute:#8d9099; --faint:#5a5d65; --line:#1f2024; --hover:#151619;
+    --accent:#f5c451; --accent-soft:#2a2414; --term:#141518; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b0b0c; --fg:#ecebe8; --mute:#8d9099; --faint:#5a5d65; --line:#1f2024; --hover:#151619;
+  --accent:#f5c451; --accent-soft:#2a2414; --term:#141518; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px}
+@media (max-width:520px){.wrap{padding:0 16px}}
+
+/* top bar */
+.bar{display:flex;align-items:center;gap:14px;height:68px}
+.mark{font-family:var(--mono);font-weight:700;font-size:19px;letter-spacing:-.02em;display:flex;align-items:center;gap:2px}
+.mark b{color:var(--accent);font-weight:700}
+.mark i{display:inline-block;width:9px;height:19px;background:var(--accent);margin-left:3px;animation:blink 1.1s steps(1) infinite}
+.spacer{flex:1}
+.iconbtn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--mute)}
+.iconbtn:hover{background:var(--hover);color:var(--fg)}
+@keyframes blink{50%{opacity:0}}
+
+/* segmented */
+.seg{display:inline-flex;background:var(--hover);border-radius:12px;padding:4px;gap:2px}
+.seg button{padding:8px 16px;border-radius:9px;font-weight:500;font-size:15px;color:var(--mute);min-height:40px;transition:background .2s,color .2s}
+.seg button[aria-pressed="true"]{background:var(--bg);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* home */
+.hero{padding:56px 0 8px}
+.hero h1{font-size:clamp(34px,6vw,52px);line-height:1.08;letter-spacing:-.03em;margin:0 0 18px;font-weight:700}
+.hero h1 code{font-family:var(--mono);font-size:.86em;color:var(--accent);letter-spacing:-.04em}
+.hero p{color:var(--mute);margin:0;max-width:560px}
+.modepick{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:36px 0 6px}
+.modepick .why{color:var(--mute);font-size:15px;flex:1;min-width:220px}
+.list{margin:28px 0 80px;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:6px 14px;width:100%;text-align:left;padding:18px 12px;border-bottom:1px solid var(--line);border-radius:0;transition:background .15s}
+.row:hover{background:var(--hover)}
+.row .n{font-family:var(--mono);color:var(--faint);font-size:14px}
+.row .t{font-weight:600;font-size:18px;line-height:1.3}
+.row .d{color:var(--mute);font-size:15px;line-height:1.45;margin-top:2px}
+.row .s{font-family:var(--mono);font-size:14px;color:var(--mute);text-align:right;white-space:nowrap}
+.row .s b{color:var(--fg);font-weight:500}
+.row>span{min-width:0}
+.row .ex{font-family:var(--mono);font-size:13px;color:var(--faint);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:pre}
+.row[disabled]{opacity:.45;cursor:default}
+.row[disabled]:hover{background:none}
+@media (max-width:520px){.row{grid-template-columns:30px 1fr;padding:16px 4px}.row .s{grid-column:2;text-align:left}}
+
+/* practice */
+.phead{display:flex;align-items:center;gap:10px;height:68px}
+.phead .title{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats{display:flex;gap:22px;font-family:var(--mono);text-align:right}
+.stat .v{font-size:20px;font-weight:500;line-height:1.1}
+.stat .k{font-size:11px;color:var(--faint);letter-spacing:.04em}
+.progress{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin:4px 0 0}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s cubic-bezier(.2,.8,.2,1)}
+.task{font-size:clamp(20px,3.4vw,26px);font-weight:500;line-height:1.4;letter-spacing:-.01em;margin:26px 0 18px;min-height:2.8em;display:flex;align-items:flex-end}
+.task span{animation:rise .35s cubic-bezier(.2,.8,.2,1)}
+.task code{font-family:var(--mono);font-size:.84em;background:var(--accent-soft);color:var(--fg);padding:1px 7px;border-radius:6px}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.term{position:relative;background:var(--term);color:var(--t-fg);border-radius:16px;font-family:var(--mono);font-size:17px;line-height:1.65;padding:20px 22px 22px;cursor:text;
+  max-height:min(56vh, calc(var(--vvh,100vh) - 250px));min-height:240px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scroll-behavior:smooth;
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 50px -24px rgba(0,0,0,.45)}
+@media (max-width:520px){.term{font-size:14.5px;padding:16px;border-radius:14px;min-height:200px}}
+.term.shake{animation:shake .32s}
+@keyframes shake{20%{transform:translateX(-6px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}}
+.hist .l{white-space:pre-wrap;word-break:break-all}
+.hist .o{white-space:pre;color:var(--t-out);overflow-x:auto;scrollbar-width:none}
+.hist .o::-webkit-scrollbar{display:none}
+.hist .e{white-space:pre;color:var(--t-err)}
+.hist .gap{height:.8em}
+.p{color:var(--t-prompt)}
+.hist .l .p{opacity:.7}
+.hist .l.bad .c{color:var(--t-out);text-decoration:line-through;text-decoration-color:rgba(255,107,107,.6)}
+.cur{position:relative;min-height:1.65em;margin:0}
+#line{white-space:pre-wrap;word-break:break-all}
+.cur .ok{color:var(--t-fg)}
+.cur .er{color:var(--t-err);background:rgba(255,107,107,.14);border-radius:2px}
+.cur .gh{color:var(--t-ghost)}
+.cur .mk{display:inline-block;width:0;height:1.65em;vertical-align:top}
+.caret{position:absolute;left:0;top:0;width:2px;height:1.3em;margin-top:.17em;background:var(--t-prompt);border-radius:2px;transition:transform .09s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.caret.idle{animation:blink 1s steps(1) infinite}
+.term:not(.focus) .caret{opacity:.35;animation:none}
+#kb{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;margin:0;color:transparent;background:transparent;caret-color:transparent;outline:none;resize:none}
+
+.ladder{display:flex;align-items:center;gap:6px;margin:16px 0 0;font-family:var(--mono);font-size:13px;flex-wrap:wrap;color:var(--faint)}
+.ladder .m{padding:5px 10px;border-radius:8px;border:1px solid var(--line);transition:all .25s;white-space:nowrap}
+.ladder .m.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.ladder .arrow{opacity:.5}
+.ladder .m.off{opacity:.35;border-style:dashed}
+
+.under{display:flex;align-items:flex-start;gap:12px;margin:18px 0 0;flex-wrap:wrap}
+.fb{flex:1;min-width:200px;color:var(--mute);font-size:15px;min-height:1.6em}
+.fb.bad{color:#e5484d}
+.fb code{font-family:var(--mono);color:var(--fg);font-size:14px}
+.btn{min-height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--line);font-weight:500;font-size:15px;display:inline-flex;align-items:center;gap:8px;transition:background .15s}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.primary:hover{opacity:.9;background:var(--fg)}
+.keys{margin:28px 0 40px;color:var(--faint);font-size:13px;display:flex;gap:20px;flex-wrap:wrap}
+.keys kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px;color:var(--mute);margin-right:6px}
+@media (hover:none){.keys{display:none}}
+
+/* result */
+.result{padding:40px 0 80px;animation:rise .4s cubic-bezier(.2,.8,.2,1)}
+.big{display:flex;gap:clamp(24px,6vw,64px);flex-wrap:wrap;margin:8px 0 34px}
+.big .v{font-family:var(--mono);font-size:clamp(44px,9vw,72px);font-weight:500;line-height:1;letter-spacing:-.04em}
+.big .v small{font-size:.38em;color:var(--mute);letter-spacing:0;margin-left:6px}
+.big .k{color:var(--mute);font-size:15px;margin-top:8px}
+.result h2{font-size:clamp(26px,4.5vw,34px);letter-spacing:-.02em;margin:0 0 6px;line-height:1.2}
+.result .sub{color:var(--mute);margin:0 0 28px}
+.missed{border-top:1px solid var(--line);margin:0 0 30px}
+.missed div{padding:12px 0;border-bottom:1px solid var(--line)}
+.missed code{font-family:var(--mono);font-size:15px;display:block;word-break:break-all}
+.missed span{color:var(--mute);font-size:14px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="home" class="wrap">
+  <div class="bar">
+    <div class="mark">conf<b>&nbsp;t</b><i></i></div>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="themeBtn" aria-label="สลับธีม"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg></button>
+  </div>
+  <section class="hero">
+    <h1>พิมพ์ <code>conf t</code> ให้ไวเท่าคิด</h1>
+    <p>ฝึกพิมพ์คำสั่ง Cisco IOS ใน terminal ที่ prompt เปลี่ยนตามจริง ตั้งแต่ตั้งชื่อ router, telnet, static route ไปจนถึง OSPF, EIGRP และ ACL</p>
+  </section>
+  <div class="modepick">
+    <div class="seg" role="group">
+      <button data-mode="type" aria-pressed="true">Type</button>
+      <button data-mode="recall" aria-pressed="false">Recall</button>
+    </div>
+    <div class="why" id="modeWhy"></div>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+
+<div id="play" class="wrap" hidden>
+  <div class="phead">
+    <button class="iconbtn" id="backBtn" aria-label="กลับ"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="title" id="pTitle"></div>
+    <div class="spacer"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="progress"><i id="prog"></i></div>
+  <div id="stage">
+    <div class="task" id="task"></div>
+    <div class="term" id="term">
+      <div class="hist" id="hist"></div>
+      <form class="cur" id="cur" autocomplete="off" onsubmit="return false">
+        <span id="line"></span><span class="caret" id="caret"></span>
+        <input id="kb" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="send" aria-label="พิมพ์คำสั่ง">
+      </form>
+    </div>
+    <div class="ladder" id="ladder"></div>
+    <div class="under">
+      <div class="fb" id="fb"></div>
+      <button class="btn" id="hintBtn">ใบ้</button>
+      <button class="btn" id="ansBtn">เฉลย</button>
+      <button class="btn" id="restartBtn" aria-label="เริ่มใหม่"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+    </div>
+    <div class="keys" id="keys"></div>
+  </div>
+  <div id="result" class="result" hidden></div>
+</div>
+
+<script>
+/* ---------- lessons ----------
+   c: command ({...} = exact value, e.g. password)   t: task (Thai)
+   o: output lines   p: custom prompt for this line   s: secret (password prompt)
+   to: state after   from: state before   alt: other accepted commands */
+const PC = {host:'PC1', mode:'pc'};
+const LESSONS = [
+{id:'basic', title:'Basic setup', th:'ตั้งค่าพื้นฐาน: ชื่อเครื่อง รหัสผ่าน banner และบันทึก config', start:{host:'Router',mode:'user'}, steps:[
+  {c:'enable', t:'เข้า privileged EXEC mode'},
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'hostname R1', t:'ตั้งชื่อ router เป็น <code>R1</code>'},
+  {c:'no ip domain-lookup', t:'ปิด DNS lookup พิมพ์คำสั่งผิดแล้วจะได้ไม่ค้างรอ'},
+  {c:'enable secret {class}', t:'ตั้งรหัสเข้า privileged mode เป็น <code>class</code> แบบเข้ารหัส'},
+  {c:'line console 0', t:'เข้าไปตั้งค่าพอร์ต console'},
+  {c:'password {cisco}', t:'ตั้งรหัส console เป็น <code>cisco</code>'},
+  {c:'login', t:'บังคับให้ถามรหัสตอนเข้าทาง console'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'service password-encryption', t:'เข้ารหัส password ทุกตัวที่เก็บเป็น plain text'},
+  {c:'banner motd {#Authorized access only#}', t:'ตั้ง banner ว่า <code>Authorized access only</code> ใช้ <code>#</code> คร่อมหัวท้าย'},
+  {c:'end', t:'กลับ privileged EXEC ในคำสั่งเดียว'},
+  {c:'copy running-config startup-config', alt:['write memory','write'], t:'บันทึก running-config ลง NVRAM'},
+  {c:'', p:'Destination filename [startup-config]?', t:'กด Enter เพื่อยืนยันชื่อไฟล์', o:['Building configuration...','[OK]']},
+]},
+{id:'iface', title:'Interfaces', th:'ตั้ง IP ให้ GigabitEthernet และ Serial แล้วเปิดใช้งาน', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'interface g0/0', t:'เข้าไปตั้งค่า interface <code>G0/0</code>'},
+  {c:'description LAN1', t:'ใส่คำอธิบาย interface ว่า <code>LAN1</code>'},
+  {c:'ip address 192.168.1.1 255.255.255.0', t:'ตั้ง IP <code>192.168.1.1/24</code>'},
+  {c:'no shutdown', t:'เปิด interface (ของ router ปิดไว้เป็นค่าเริ่มต้น)', o:['%LINK-5-CHANGED: Interface GigabitEthernet0/0, changed state to up','%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0, changed state to up']},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'interface s0/0/0', t:'เข้าไปตั้งค่า serial <code>S0/0/0</code>'},
+  {c:'ip address 10.0.0.1 255.255.255.252', t:'ตั้ง IP <code>10.0.0.1/30</code> ให้ลิงก์ WAN'},
+  {c:'clock rate 64000', t:'ฝั่งนี้เป็น DCE ตั้ง clock rate เป็น <code>64000</code>'},
+  {c:'no shutdown', t:'เปิด interface', o:['%LINK-5-CHANGED: Interface Serial0/0/0, changed state to down']},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'show ip interface brief', t:'ดูสรุปสถานะและ IP ของทุก interface', o:[
+'Interface              IP-Address      OK? Method Status                Protocol',
+'GigabitEthernet0/0     192.168.1.1     YES manual up                    up',
+'GigabitEthernet0/1     unassigned      YES unset  administratively down down',
+'Serial0/0/0            10.0.0.1        YES manual down                  down']},
+]},
+{id:'verify', title:'Verify', th:'คำสั่ง show, ping และ traceroute ที่ใช้ตรวจงาน', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'show running-config', t:'ดู config ที่กำลังใช้งานอยู่ใน RAM', o:['Building configuration...','','Current configuration : 1024 bytes','!','hostname R1','...']},
+  {c:'show startup-config', t:'ดู config ที่บันทึกไว้ใน NVRAM'},
+  {c:'show ip route', t:'ดู routing table', o:['C    192.168.1.0/24 is directly connected, GigabitEthernet0/0','L    192.168.1.1/32 is directly connected, GigabitEthernet0/0']},
+  {c:'show interfaces g0/0', t:'ดูรายละเอียดเต็มของ interface <code>G0/0</code>', o:['GigabitEthernet0/0 is up, line protocol is up','  Internet address is 192.168.1.1/24','  MTU 1500 bytes, BW 1000000 Kbit, DLY 10 usec']},
+  {c:'show version', t:'ดูรุ่น IOS, uptime และ config register'},
+  {c:'show cdp neighbors', t:'ดูอุปกรณ์ Cisco ที่ต่ออยู่ติดกัน'},
+  {c:'show arp', t:'ดูตาราง ARP (IP คู่กับ MAC)'},
+  {c:'ping 192.168.2.10', t:'ping ไปที่ <code>192.168.2.10</code>', o:['Type escape sequence to abort.','Sending 5, 100-byte ICMP Echos to 192.168.2.10, timeout is 2 seconds:','.!!!!','Success rate is 80 percent (4/5), round-trip min/avg/max = 1/2/4 ms']},
+  {c:'traceroute 192.168.2.10', t:'ดูเส้นทางทีละ hop ไปที่ <code>192.168.2.10</code>', o:['  1   10.0.0.2      2 msec    1 msec    1 msec','  2   192.168.2.10  1 msec    2 msec    1 msec']},
+  {c:'show clock', t:'ดูเวลาบนเครื่อง'},
+]},
+{id:'telnet', title:'Telnet', th:'เปิด VTY ให้ remote เข้ามาได้ แล้ว telnet จาก PC เข้า router', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'enable secret {class}', t:'ตั้ง enable secret เป็น <code>class</code> ถ้าไม่มี telnet เข้ามาแล้วจะขึ้น privileged mode ไม่ได้'},
+  {c:'line vty 0 4', t:'เข้าไปตั้งค่า virtual terminal 5 สาย (0 ถึง 4)'},
+  {c:'password {cisco}', t:'ตั้งรหัส VTY เป็น <code>cisco</code>'},
+  {c:'login', t:'บังคับให้ถามรหัสตอน remote เข้ามา'},
+  {c:'transport input telnet', t:'อนุญาตให้เข้าได้ด้วย telnet'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'telnet 192.168.1.1', from:PC, t:'ไปที่ PC1 แล้ว telnet เข้า R1 ที่ <code>192.168.1.1</code>', o:['Trying 192.168.1.1 ...Open','','User Access Verification','']},
+  {c:'{cisco}', p:'Password:', s:1, t:'ใส่รหัส VTY', to:{host:'R1',mode:'user'}},
+  {c:'enable', t:'ขอเข้า privileged mode', to:{host:'R1',mode:'user'}},
+  {c:'{class}', p:'Password:', s:1, t:'ใส่ enable secret', to:{host:'R1',mode:'priv'}},
+  {c:'show users', t:'ดูว่าใครเชื่อมต่ออยู่บ้าง', o:['    Line       User       Host(s)              Idle       Location','   0 con 0                idle                 00:03:12','*  2 vty 0                idle                 00:00:00 192.168.1.10']},
+  {c:'exit', t:'ออกจาก telnet session', o:['','[Connection to 192.168.1.1 closed by foreign host]'], to:PC},
+]},
+{id:'ssh', title:'SSH', th:'ตั้ง SSH ให้ login ด้วย username/password แทน telnet', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'ip domain-name netlab.local', t:'ตั้ง domain name เป็น <code>netlab.local</code> (ต้องมีก่อนสร้าง key)'},
+  {c:'username {admin} secret {cisco123}', t:'สร้าง user <code>admin</code> รหัส <code>cisco123</code>'},
+  {c:'crypto key generate rsa', t:'สร้าง RSA key', o:['The name for the keys will be: R1.netlab.local','Choose the size of the key modulus in the range of 360 to 4096 for your','  General Purpose Keys. Choosing a key modulus greater than 512 may take','  a few minutes.','']},
+  {c:'1024', p:'How many bits in the modulus [512]:', t:'ตั้งขนาด key เป็น <code>1024</code> bit (SSH v2 ต้องอย่างน้อย 768)', o:['% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]'], to:{host:'R1',mode:'config'}},
+  {c:'ip ssh version 2', t:'บังคับใช้ SSH version 2'},
+  {c:'line vty 0 4', t:'เข้าไปตั้งค่า VTY'},
+  {c:'transport input ssh', t:'อนุญาตเฉพาะ SSH'},
+  {c:'login local', t:'ให้ login ด้วย username ในเครื่อง'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'ssh -l {admin} 192.168.1.1', from:PC, t:'ไปที่ PC1 แล้ว SSH เข้า R1 ด้วย user <code>admin</code>'},
+  {c:'{cisco123}', p:'Password:', s:1, t:'ใส่รหัสของ admin', to:{host:'R1',mode:'user'}},
+]},
+{id:'static', title:'Static routing', th:'static route แบบ next-hop, exit interface และ default route', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'ip route 192.168.2.0 255.255.255.0 10.0.0.2', t:'ส่ง <code>192.168.2.0/24</code> ไปทาง next-hop <code>10.0.0.2</code>'},
+  {c:'ip route 172.16.0.0 255.255.0.0 s0/0/0', t:'ส่ง <code>172.16.0.0/16</code> ออกทาง exit interface <code>S0/0/0</code>'},
+  {c:'ip route 0.0.0.0 0.0.0.0 10.0.0.2', t:'ตั้ง default route ไปที่ <code>10.0.0.2</code>'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'show ip route', t:'ตรวจ routing table', o:[
+'Gateway of last resort is 10.0.0.2 to network 0.0.0.0','',
+'C    10.0.0.0/30 is directly connected, Serial0/0/0',
+'S    172.16.0.0/16 is directly connected, Serial0/0/0',
+'C    192.168.1.0/24 is directly connected, GigabitEthernet0/0',
+'S    192.168.2.0/24 [1/0] via 10.0.0.2',
+'S*   0.0.0.0/0 [1/0] via 10.0.0.2']},
+]},
+{id:'rip', title:'RIP v2', th:'เปิด RIP version 2 ประกาศ network ที่ต่อตรง', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'router rip', t:'เปิด routing protocol RIP'},
+  {c:'version 2', t:'ใช้ RIP version 2 (classless)'},
+  {c:'network 192.168.1.0', t:'ประกาศ network <code>192.168.1.0</code>'},
+  {c:'network 10.0.0.0', t:'ประกาศ network <code>10.0.0.0</code>'},
+  {c:'no auto-summary', t:'ปิดการสรุป route ตาม class อัตโนมัติ'},
+  {c:'passive-interface g0/0', t:'ไม่ต้องส่ง RIP update ออกฝั่ง LAN <code>G0/0</code>'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'show ip protocols', t:'ตรวจว่า RIP ทำงานและประกาศ network อะไรบ้าง', o:['Routing Protocol is "rip"','  Default version control: send version 2, receive 2','  Routing for Networks:','    10.0.0.0','    192.168.1.0','  Passive Interface(s):','    GigabitEthernet0/0']},
+  {c:'show ip route rip', t:'ดูเฉพาะ route ที่ได้จาก RIP', o:['R    192.168.2.0/24 [120/1] via 10.0.0.2, 00:00:12, Serial0/0/0']},
+]},
+{id:'ospf', title:'OSPF', th:'OSPF single-area: process ID, router-id, network + wildcard', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'router ospf 10', t:'เปิด OSPF process ID <code>10</code>'},
+  {c:'router-id 1.1.1.1', t:'ตั้ง router ID เป็น <code>1.1.1.1</code>'},
+  {c:'network 192.168.1.0 0.0.0.255 area 0', t:'ประกาศ <code>192.168.1.0/24</code> ใน area 0 (ใช้ wildcard mask)'},
+  {c:'network 10.0.0.0 0.0.0.3 area 0', t:'ประกาศลิงก์ <code>10.0.0.0/30</code> ใน area 0'},
+  {c:'passive-interface g0/0', t:'ไม่ส่ง hello ออกฝั่ง LAN <code>G0/0</code>'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'interface s0/0/0', t:'เข้า interface <code>S0/0/0</code>'},
+  {c:'ip ospf cost 50', t:'ตั้ง OSPF cost ของลิงก์นี้เป็น <code>50</code>'},
+  {c:'end', t:'กลับ privileged EXEC', o:['%OSPF-5-ADJCHG: Process 10, Nbr 2.2.2.2 on Serial0/0/0 from LOADING to FULL, Loading Done']},
+  {c:'show ip ospf neighbor', t:'ดู neighbor ของ OSPF', o:['Neighbor ID     Pri   State           Dead Time   Address         Interface','2.2.2.2           0   FULL/  -        00:00:35    10.0.0.2        Serial0/0/0']},
+]},
+{id:'eigrp', title:'EIGRP', th:'EIGRP: AS number, network + wildcard และ bandwidth ที่ใช้คิด metric', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'router eigrp 100', t:'เปิด EIGRP autonomous system <code>100</code> (ต้องเลขเดียวกันทุก router)'},
+  {c:'eigrp router-id 1.1.1.1', t:'ตั้ง router ID ของ EIGRP เป็น <code>1.1.1.1</code>'},
+  {c:'network 192.168.1.0 0.0.0.255', t:'ประกาศ <code>192.168.1.0/24</code> (ใช้ wildcard mask)'},
+  {c:'network 10.0.0.0 0.0.0.3', t:'ประกาศลิงก์ <code>10.0.0.0/30</code>', o:['%DUAL-5-NBRCHANGE: IP-EIGRP 100: Neighbor 10.0.0.2 (Serial0/0/0) is up: new adjacency']},
+  {c:'no auto-summary', t:'ปิดการสรุป route อัตโนมัติ'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'interface s0/0/0', t:'เข้า interface <code>S0/0/0</code>'},
+  {c:'bandwidth 64', t:'ตั้ง bandwidth เป็น <code>64</code> kbps ให้ EIGRP คิด metric ตรงกับลิงก์จริง'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'show ip eigrp neighbors', t:'ดู neighbor ของ EIGRP', o:['IP-EIGRP neighbors for process 100','H   Address         Interface   Hold  Uptime    SRTT  RTO  Q   Seq','0   10.0.0.2        Se0/0/0     13    00:01:12  40    240  0   5']},
+  {c:'show ip route eigrp', t:'ดูเฉพาะ route ที่ได้จาก EIGRP', o:['D    192.168.2.0/24 [90/20514560] via 10.0.0.2, 00:01:10, Serial0/0/0']},
+]},
+{id:'acl', title:'Access lists', th:'Standard ACL, extended ACL, ผูกเข้า interface และ VTY', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'access-list 10 permit 192.168.1.0 0.0.0.255', t:'standard ACL <code>10</code> อนุญาตทั้งวง <code>192.168.1.0/24</code>'},
+  {c:'access-list 10 deny any', t:'ACL 10 ปฏิเสธที่เหลือทั้งหมด'},
+  {c:'interface g0/1', t:'เข้า interface <code>G0/1</code>'},
+  {c:'ip access-group 10 out', t:'ผูก ACL 10 ขาออก (standard วางใกล้ปลายทาง)'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'access-list 100 deny tcp 192.168.1.0 0.0.0.255 host 192.168.2.10 eq 80', t:'extended ACL <code>100</code> ห้ามวง <code>192.168.1.0/24</code> เข้าเว็บ (port 80) ของ server <code>192.168.2.10</code>'},
+  {c:'access-list 100 permit ip any any', t:'ACL 100 อนุญาต traffic อื่นทั้งหมด'},
+  {c:'interface g0/0', t:'เข้า interface <code>G0/0</code>'},
+  {c:'ip access-group 100 in', t:'ผูก ACL 100 ขาเข้า (extended วางใกล้ต้นทาง)'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'ip access-list standard {ADMIN}', t:'สร้าง named standard ACL ชื่อ <code>ADMIN</code>'},
+  {c:'permit host 192.168.1.10', t:'อนุญาตเฉพาะเครื่อง <code>192.168.1.10</code>'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'line vty 0 4', t:'เข้าไปตั้งค่า VTY'},
+  {c:'access-class {ADMIN} in', t:'ให้ telnet/SSH เข้ามาได้เฉพาะเครื่องที่ ACL ADMIN อนุญาต'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'show access-lists', t:'ตรวจ ACL ทั้งหมด', o:['Standard IP access list 10','    10 permit 192.168.1.0 0.0.0.255','    20 deny any','Extended IP access list 100','    10 deny tcp 192.168.1.0 0.0.0.255 host 192.168.2.10 eq www','    20 permit ip any any','Standard IP access list ADMIN','    10 permit host 192.168.1.10']},
+]},
+{id:'dhcp', title:'DHCP', th:'ให้ router แจก IP: excluded-address, pool, gateway, DNS', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'ip dhcp excluded-address 192.168.1.1 192.168.1.10', t:'กัน <code>192.168.1.1</code> ถึง <code>.10</code> ไว้ ไม่ให้แจก'},
+  {c:'ip dhcp pool LAN1', t:'สร้าง DHCP pool ชื่อ <code>LAN1</code>'},
+  {c:'network 192.168.1.0 255.255.255.0', t:'แจกในวง <code>192.168.1.0/24</code>'},
+  {c:'default-router 192.168.1.1', t:'ตั้ง default gateway ให้ client เป็น <code>192.168.1.1</code>'},
+  {c:'dns-server 8.8.8.8', t:'ตั้ง DNS ให้ client เป็น <code>8.8.8.8</code>'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'show ip dhcp binding', t:'ดูว่าแจก IP ให้ใครไปแล้วบ้าง', o:['IP address       Client-ID/              Lease expiration        Type','                 Hardware address','192.168.1.11     0001.6378.A2C1           --                     Automatic']},
+]},
+{id:'switch', title:'Switch & VLAN', th:'สร้าง VLAN, access port, trunk และ IP สำหรับจัดการ switch', start:{host:'Switch',mode:'user'}, steps:[
+  {c:'enable', t:'เข้า privileged EXEC mode'},
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'hostname S1', t:'ตั้งชื่อ switch เป็น <code>S1</code>'},
+  {c:'vlan 10', t:'สร้าง VLAN <code>10</code>'},
+  {c:'name SALES', t:'ตั้งชื่อ VLAN ว่า <code>SALES</code>'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'interface f0/1', t:'เข้า interface <code>F0/1</code>'},
+  {c:'switchport mode access', t:'ตั้งพอร์ตเป็น access port'},
+  {c:'switchport access vlan 10', t:'ใส่พอร์ตนี้เข้า VLAN 10'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'interface g0/1', t:'เข้า interface <code>G0/1</code> ที่ต่อขึ้น router'},
+  {c:'switchport mode trunk', t:'ตั้งพอร์ตเป็น trunk ให้ส่งได้หลาย VLAN'},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'interface vlan 1', t:'เข้า SVI ของ VLAN 1 เพื่อตั้ง IP จัดการ switch'},
+  {c:'ip address 192.168.1.2 255.255.255.0', t:'ตั้ง IP <code>192.168.1.2/24</code>'},
+  {c:'no shutdown', t:'เปิด interface', o:['%LINK-5-CHANGED: Interface Vlan1, changed state to up']},
+  {c:'exit', t:'ถอยกลับไป global config'},
+  {c:'ip default-gateway 192.168.1.1', t:'ตั้ง default gateway ของ switch เป็น <code>192.168.1.1</code>'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'show vlan brief', t:'ตรวจ VLAN และพอร์ตที่อยู่ในแต่ละ VLAN', o:['VLAN Name                             Status    Ports','---- -------------------------------- --------- -------------------------------','1    default                          active    Fa0/2, Fa0/3, Fa0/4','10   SALES                            active    Fa0/1']},
+]},
+{id:'ipv6', title:'IPv6', th:'เปิด IPv6 routing ตั้ง global unicast และ link-local', start:{host:'R1',mode:'priv'}, steps:[
+  {c:'configure terminal', t:'เข้า global configuration mode'},
+  {c:'ipv6 unicast-routing', t:'เปิดให้ router ส่งต่อ IPv6'},
+  {c:'interface g0/0', t:'เข้า interface <code>G0/0</code>'},
+  {c:'ipv6 address 2001:db8:acad:1::1/64', t:'ตั้ง IPv6 <code>2001:db8:acad:1::1/64</code>'},
+  {c:'ipv6 address fe80::1 link-local', t:'ตั้ง link-local เองเป็น <code>fe80::1</code>'},
+  {c:'no shutdown', t:'เปิด interface'},
+  {c:'end', t:'กลับ privileged EXEC'},
+  {c:'show ipv6 interface brief', t:'ตรวจ IPv6 ของทุก interface', o:['GigabitEthernet0/0         [up/up]','    FE80::1','    2001:DB8:ACAD:1::1']},
+]},
+];
+
+/* ---------- IOS-ish state machine ---------- */
+function derive(st, cmd){
+  const s = {...st}, c = cmd.trim().toLowerCase(), w = c.split(/\s+/);
+  if (s.mode==='user'){ if (w[0]==='enable') s.mode='priv'; return s; }
+  if (s.mode==='priv'){ if (c==='configure terminal') s.mode='config'; else if (w[0]==='disable') s.mode='user'; return s; }
+  if (s.mode!=='config' && s.mode!=='sub') return s;
+  if (w[0]==='end'){ s.mode='priv'; s.sub=null; return s; }
+  if (w[0]==='exit'){ if (s.mode==='sub'){ s.mode='config'; s.sub=null; } else s.mode='priv'; return s; }
+  if (w[0]==='hostname'){ s.host = cmd.trim().split(/\s+/)[1]; return s; }
+  let sub = null;
+  if (w[0]==='interface') sub = 'config-if';
+  else if (w[0]==='router') sub = 'config-router';
+  else if (w[0]==='line') sub = 'config-line';
+  else if (w[0]==='vlan') sub = 'config-vlan';
+  else if (w[0]==='ip' && w[1]==='dhcp' && w[2]==='pool') sub = 'dhcp-config';
+  else if (w[0]==='ip' && w[1]==='access-list') sub = w[2]==='standard' ? 'config-std-nacl' : 'config-ext-nacl';
+  if (sub){ s.mode='sub'; s.sub=sub; }
+  return s;
+}
+function promptOf(st){
+  if (st.mode==='pc') return 'C:\\>';
+  if (st.mode==='user') return st.host+'>';
+  if (st.mode==='priv') return st.host+'#';
+  if (st.mode==='config') return st.host+'(config)#';
+  return st.host+'('+st.sub+')#';
+}
+const strip = c => c.replace(/[{}]/g,'');
+const isSpecial = s => s.p || s.s || s.c==='' || s.from;
+
+LESSONS.forEach(L=>{
+  let st = {...L.start, sub:null};
+  L.steps.forEach((s,i)=>{
+    if (s.from) st = {...s.from, sub:null};
+    s.before = {...st};
+    s.d = strip(s.c);
+    s.key = L.id+':'+i;
+    s.lesson = L.title;
+    st = s.to ? {sub:null, ...s.to} : derive(st, s.d);
+  });
+});
+
+/* ---------- command matching (recall mode) ---------- */
+const MIN = {terminal:1, configure:4, enable:2, interface:3, ip:2, no:2, show:2, shutdown:4, write:2, memory:3, exit:3, end:3, address:3, 'running-config':3, 'startup-config':4, route:3, router:3, version:3, network:3, line:2, vty:2, console:3, password:4, login:4, secret:3, brief:2, switchport:2, description:4, access:3};
+const minLen = k => Math.min(k.length, MIN[k] ?? 3);
+const IFN = [['gigabitethernet',1],['fastethernet',1],['serial',1],['loopback',2],['vlan',1],['ethernet',1]];
+const IFPRETTY = {gigabitethernet:'GigabitEthernet',fastethernet:'FastEthernet',serial:'Serial',loopback:'Loopback',vlan:'Vlan',ethernet:'Ethernet'};
+const isAddr = t => /^\d+\.\d+\.\d+\.\d+$/.test(t);
+function ifName(name){
+  name = name.toLowerCase();
+  for (const [full,m] of IFN) if (name.length>=m && full.startsWith(name)) return full;
+  return null;
+}
+function ifContext(prev){
+  if (!prev) return false;
+  const p = prev.t.toLowerCase();
+  return (p.length>=3 && 'interface'.startsWith(p)) || /interface$/.test(p) || isAddr(p);
+}
+// raw words -> tokens, merging "g 0/0" / "g0/0" into one interface token
+function tokenize(str, braced){
+  const out = [], re = braced ? /\{[^}]*\}|\S+/g : /\S+/g;
+  const raw = []; let m;
+  while ((m = re.exec(str))) raw.push({t:m[0], pos:m.index});
+  for (let i=0;i<raw.length;i++){
+    const tk = raw[i];
+    if (tk.t[0]==='{'){ out.push({t:tk.t.slice(1,-1), pos:tk.pos, val:1, exact:1, words:tk.t.slice(1,-1).split(/\s+/).length}); continue; }
+    if (ifContext(out[out.length-1])){
+      const mm = tk.t.match(/^([a-z-]+?)(\d[\d\/.]*)?$/i);
+      if (mm){
+        let num = mm[2];
+        if (!num && raw[i+1] && /^\d[\d\/.]*$/.test(raw[i+1].t)){ num = raw[i+1].t; i++; }
+        const full = ifName(mm[1]);
+        if (full && num){ out.push({t:full+num, pos:tk.pos, iface:full, val:1, pretty:IFPRETTY[full]+num}); continue; }
+      }
+    }
+    const val = /[\d.:A-Z#]/.test(tk.t) || tk.t[0]==='-';
+    out.push({t:tk.t, pos:tk.pos, val:val?1:0});
+  }
+  return out;
+}
+function matchOne(input, cmd){
+  const T = tokenize(cmd, true), U = tokenize(input, false);
+  let ui = 0;
+  for (let ti=0; ti<T.length; ti++){
+    const tt = T[ti];
+    if (ui >= U.length) return {err:'incomplete', got:ti};
+    const u = U[ui];
+    if (tt.exact && tt.words>1){
+      const seg = U.slice(ui, ui+tt.words).map(x=>x.t).join(' ');
+      if (seg !== tt.t) return {err:'value', pos:u.pos, got:ti, want:tt.t, have:seg};
+      ui += tt.words; continue;
+    }
+    if (tt.exact){ if (u.t!==tt.t) return {err:'value', pos:u.pos, got:ti, want:tt.t, have:u.t}; ui++; continue; }
+    if (tt.val){ if (u.t.toLowerCase()!==tt.t.toLowerCase()) return {err: tt.iface||!/^[a-z-]+$/i.test(u.t) ? 'value':'invalid', pos:u.pos, got:ti, want:tt.pretty||tt.t, have:u.pretty||u.t}; ui++; continue; }
+    const ul = u.t.toLowerCase();
+    if (!tt.t.startsWith(ul)) return {err:'invalid', pos:u.pos, got:ti};
+    if (ul.length < minLen(tt.t)) return {err:'ambiguous', pos:u.pos, got:ti, have:u.t};
+    ui++;
+  }
+  if (ui < U.length) return {err:'invalid', pos:U[ui].pos, got:T.length};
+  return {ok:1};
+}
+function check(input, step){
+  if (step.s || step.c==='') return input===step.d ? {ok:1} : {err:'secret'};
+  let best = null;
+  for (const c of [step.c, ...(step.alt||[])]){
+    const r = matchOne(input.trim(), c);
+    if (r.ok) return r;
+    if (!best) best = r;
+  }
+  return best;
+}
+
+/* ---------- storage ---------- */
+const store = {
+  get(){ try { return JSON.parse(localStorage.getItem('conft.v1')) || {best:{}, weak:{}}; } catch(e){ return {best:{}, weak:{}}; } },
+  set(d){ try { localStorage.setItem('conft.v1', JSON.stringify(d)); } catch(e){} }
+};
+let DB = store.get(); DB.best ||= {}; DB.weak ||= {};
+
+/* ---------- theme ---------- */
+const root = document.documentElement;
+try { const th = localStorage.getItem('conft.theme'); if (th) root.dataset.theme = th; } catch(e){}
+document.getElementById('themeBtn').onclick = ()=>{
+  const dark = root.dataset.theme ? root.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('conft.theme', root.dataset.theme); } catch(e){}
+};
+
+/* ---------- home ---------- */
+let MODE = 'type';
+try { MODE = localStorage.getItem('conft.mode') || 'type'; } catch(e){}
+const WHY = {
+  type: 'คำสั่งเต็มขึ้นเป็นเงาให้พิมพ์ทับ เน้นสร้าง muscle memory และความเร็ว',
+  recall: 'เห็นแค่โจทย์ ต้องพิมพ์จากความจำ ย่อแบบ IOS ได้ เช่น conf t, int g0/0, no shut'
+};
+const $ = id => document.getElementById(id);
+function setMode(m){
+  MODE = m;
+  try { localStorage.setItem('conft.mode', m); } catch(e){}
+  document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.mode===m));
+  $('modeWhy').textContent = WHY[m];
+  renderList();
+}
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+
+function allSteps(){ return LESSONS.flatMap(L=>L.steps.filter(s=>!isSpecial(s) && s.d!=='end' && s.d!=='exit' && s.d!=='configure terminal')); }
+function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+function weakSteps(){
+  const map = new Map(LESSONS.flatMap(L=>L.steps).map(s=>[s.key,s]));
+  return Object.entries(DB.weak).filter(([k,v])=>v>0 && map.has(k)).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([k])=>map.get(k));
+}
+function bestText(id){
+  const b = DB.best[id+'|'+MODE];
+  if (!b) return '';
+  return MODE==='type' ? `<b>${b.wpm}</b> wpm<br>${b.acc}%` : `<b>${b.ok}/${b.n}</b><br>ถูกรอบแรก`;
+}
+function renderList(){
+  const weak = weakSteps();
+  let h = LESSONS.map((L,i)=>`
+    <button class="row" data-id="${L.id}">
+      <span class="n">${String(i+1).padStart(2,'0')}</span>
+      <span><div class="t">${L.title}</div><div class="d">${L.th}</div><div class="ex">${L.steps.filter(s=>!isSpecial(s)).slice(1,4).map(s=>s.d).join('   ')}</div></span>
+      <span class="s">${bestText(L.id)}</span>
+    </button>`).join('');
+  h += `<button class="row" data-id="mix">
+      <span class="n">∞</span>
+      <span><div class="t">Mix</div><div class="d">สุ่ม 15 คำสั่งจากทุกบท แต่ละข้อขึ้น prompt ของ mode ที่ต้องอยู่</div></span>
+      <span class="s">${bestText('mix')}</span></button>`;
+  h += `<button class="row" data-id="weak" ${weak.length?'':'disabled'}>
+      <span class="n">!</span>
+      <span><div class="t">Weak spots</div><div class="d">${weak.length ? `ทวน ${weak.length} คำสั่งที่เคยพลาดหรือต้องใช้ใบ้ในโหมด Recall` : 'ยังไม่มี เล่นโหมด Recall ก่อน คำสั่งที่พลาดจะมารวมที่นี่'}</div></span>
+      <span class="s"></span></button>`;
+  $('list').innerHTML = h;
+  $('list').querySelectorAll('.row').forEach(r=>r.onclick=()=>{ if(!r.disabled) start(r.dataset.id); });
+}
+
+/* ---------- practice ---------- */
+const kb = $('kb'), term = $('term'), hist = $('hist'), lineEl = $('line'), caret = $('caret');
+let G = null; // game state
+
+function start(id){
+  let L;
+  if (id==='mix') L = {id:'mix', title:'Mix', steps: shuffle(allSteps()).slice(0,15), mixed:1};
+  else if (id==='weak') L = {id:'weak', title:'Weak spots', steps: shuffle(weakSteps()), mixed:1};
+  else L = LESSONS.find(x=>x.id===id);
+  G = {L, i:0, typed:'', keys:0, errs:0, chars:0, active:0, t0:0, tStep:0, attempts:0, hint:0, reveal:false, missed:new Set(), firstOk:0, done:false};
+  $('home').hidden = true; $('play').hidden = false; $('stage').hidden = false; $('result').hidden = true;
+  $('pTitle').textContent = L.title;
+  hist.innerHTML = '';
+  $('keys').innerHTML = MODE==='type'
+    ? '<span><kbd>Tab</kbd>เติมคำ</span><span><kbd>Esc</kbd>กลับ</span>'
+    : '<span><kbd>Tab</kbd>เติมคำแบบ IOS</span><span><kbd>?</kbd>ใบ้คำถัดไป</span><span><kbd>Esc</kbd>กลับ</span>';
+  $('hintBtn').hidden = $('ansBtn').hidden = MODE!=='recall';
+  window.scrollTo(0,0);
+  loadStep();
+  kb.focus({preventScroll:true});
+}
+function step(){ return G.L.steps[G.i]; }
+function loadStep(){
+  const s = step();
+  G.typed=''; kb.value=''; G.attempts=0; G.hint=0; G.reveal = MODE==='type'; G.tStep=0;
+  $('task').innerHTML = `<span>${s.t}</span>`;
+  $('fb').textContent=''; $('fb').className='fb';
+  renderLadder(); renderLine(); renderStats();
+  $('prog').style.width = (G.i/G.L.steps.length*100)+'%';
+}
+function curPrompt(){ const s=step(); return s.p ? s.p+' ' : promptOf(s.before); }
+function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function ghostText(){
+  const s = step();
+  if (G.reveal) return s.d;
+  if (!G.hint) return '';
+  const toks = s.d.split(' ');
+  return toks.slice(0, G.hint).join(' ') + (G.hint < toks.length ? ' ' : '');
+}
+function renderLine(){
+  const s = step(), typed = G.typed;
+  let h = `<span class="p">${esc(curPrompt())}</span>`;
+  const show = ch => s.s ? '•' : ch;
+  const g = ghostText();
+  if (MODE==='type' || G.reveal){
+    const tgt = s.d;
+    for (let i=0;i<typed.length;i++){
+      const ok = typed[i]===tgt[i];
+      h += `<span class="${ok?'ok':'er'}">${esc(show(typed[i]===' '&&!ok?'·':typed[i]))}</span>`;
+    }
+    h += '<span class="mk" id="mk"></span>';
+    if (typed.length < tgt.length) h += `<span class="gh">${esc(s.s ? '•'.repeat(tgt.length-typed.length) : tgt.slice(typed.length))}</span>`;
+    if (tgt==='' && !typed) h += `<span class="gh">↵</span>`;
+  } else {
+    h += `<span class="ok">${esc(s.s ? '•'.repeat(typed.length) : typed)}</span><span class="mk" id="mk"></span>`;
+    if (g && g.toLowerCase().startsWith(typed.toLowerCase())) h += `<span class="gh">${esc(g.slice(typed.length))}</span>`;
+  }
+  lineEl.innerHTML = h;
+  placeCaret();
+}
+function placeCaret(){
+  const mk = $('mk'); if (!mk) return;
+  caret.style.transform = `translate(${mk.offsetLeft}px, ${mk.offsetTop}px)`;
+  caret.classList.remove('idle');
+  clearTimeout(placeCaret.t); placeCaret.t = setTimeout(()=>caret.classList.add('idle'), 600);
+}
+function renderLadder(){
+  const st = step().before;
+  if (!st || st.mode==='pc'){ $('ladder').innerHTML = `<span class="m on">PC1 · Command Prompt</span>`; return; }
+  const h = st.host;
+  const parts = [['user',h+'>'],['priv',h+'#'],['config',h+'(config)#'],['sub', st.mode==='sub' ? h+'('+st.sub+')#' : 'sub-mode']];
+  $('ladder').innerHTML = parts.map(([m,l],i)=>`${i?'<span class="arrow">›</span>':''}<span class="m ${st.mode===m?'on':''} ${m==='sub'&&st.mode!=='sub'?'off':''}">${esc(l)}</span>`).join('');
+}
+function wpm(){ const min = (G.active + (G.tStep? (performance.now()-G.tStep):0))/60000; return min>0.02 ? Math.round(G.chars/5/min) : 0; }
+function acc(){ return G.keys ? Math.round((G.keys-G.errs)/G.keys*100) : 100; }
+function renderStats(){
+  const n = G.L.steps.length;
+  $('stats').innerHTML = MODE==='type'
+    ? `<div class="stat"><div class="v">${wpm()}</div><div class="k">WPM</div></div><div class="stat"><div class="v">${acc()}%</div><div class="k">ACC</div></div>`
+    : `<div class="stat"><div class="v">${Math.min(G.i+1,n)}/${n}</div><div class="k">STEP</div></div><div class="stat"><div class="v">${G.missed.size}</div><div class="k">MISS</div></div>`;
+}
+setInterval(()=>{ if (G && !G.done && MODE==='type' && !$('play').hidden) renderStats(); }, 1000);
+
+function addHist(html, cls){ const d=document.createElement('div'); d.className=cls; d.innerHTML=html; hist.appendChild(d); }
+function scrollTerm(){ requestAnimationFrame(()=>{ term.scrollTop = term.scrollHeight; }); }
+
+kb.addEventListener('input', ()=>{
+  if (!G || G.done) return;
+  let v = kb.value.replace(/\n/g,'');
+  if (MODE==='recall' && v.includes('?')){ v = v.replace(/\?/g,''); kb.value = v; giveHint(); }
+  const s = step();
+  if (!G.tStep && v.length) G.tStep = performance.now();
+  if (v.length > G.typed.length){
+    for (let i=G.typed.length;i<v.length;i++){
+      G.keys++;
+      if ((MODE==='type'||G.reveal) && v[i]!==s.d[i]) G.errs++;
+    }
+  }
+  G.typed = v;
+  renderLine(); renderStats();
+});
+kb.addEventListener('keydown', e=>{
+  if (!G) return;
+  if (e.key==='Enter'){ e.preventDefault(); if (G.done) return start(G.L.id); submit(); }
+  else if (e.key==='Tab'){ e.preventDefault(); complete(); }
+  else if (e.key==='Escape'){ e.preventDefault(); goHome(); }
+  else if (e.key==='?' && MODE==='recall'){ e.preventDefault(); giveHint(); }
+});
+const keepEnd = ()=>{ const n=kb.value.length; try{ kb.setSelectionRange(n,n); }catch(e){} };
+kb.addEventListener('select', keepEnd); kb.addEventListener('click', keepEnd); kb.addEventListener('keyup', keepEnd);
+kb.addEventListener('focus', ()=>term.classList.add('focus'));
+kb.addEventListener('blur', ()=>term.classList.remove('focus'));
+term.addEventListener('mousedown', e=>{ if (e.target!==kb){ e.preventDefault(); kb.focus({preventScroll:true}); } });
+term.addEventListener('click', ()=>kb.focus({preventScroll:true}));
+
+function complete(){
+  const s = step(), v = G.typed;
+  if (s.s || !v || v.endsWith(' ')) return;
+  if (MODE==='type' || G.reveal){
+    if (!s.d.startsWith(v)) return;
+    let j = s.d.indexOf(' ', v.length); j = j<0 ? s.d.length : j+1;
+    setTyped(s.d.slice(0,j));
+    return;
+  }
+  // IOS-like: complete the keyword the user is in the middle of
+  const words = v.split(' '), part = words[words.length-1].toLowerCase();
+  const T = tokenize(s.c, true), U = tokenize(words.slice(0,-1).join(' '), false);
+  const tt = T[U.length]; if (!tt) return;
+  if (!tt.val && tt.t.startsWith(part)) setTyped(words.slice(0,-1).concat(tt.t).join(' ')+' ');
+  else if (tt.iface){ const full = ifName(part.replace(/\d.*$/,'')); if (full && !/\d/.test(part)) setTyped(words.slice(0,-1).concat(IFPRETTY[full]).join(' ')); }
+}
+function setTyped(v){ G.typed = v; kb.value = v; if(!G.tStep) G.tStep=performance.now(); renderLine(); }
+
+function giveHint(){
+  const s = step(); if (G.reveal || s.s) { if (s.s) { G.reveal=true; renderLine(); } return; }
+  const n = s.d.split(' ').length;
+  G.hint = Math.min(n, G.hint+1); G.missed.add(s.key);
+  if (G.hint>=n) G.reveal = true;
+  $('fb').className='fb'; $('fb').innerHTML = G.reveal ? 'พิมพ์ตามเงาเพื่อไปต่อ' : 'ใบ้ทีละคำ กดอีกครั้งเพื่อดูคำถัดไป';
+  renderLine();
+}
+function reveal(){ const s=step(); G.reveal = true; G.missed.add(s.key); $('fb').className='fb'; $('fb').textContent='พิมพ์ตามเงาเพื่อไปต่อ'; renderLine(); kb.focus({preventScroll:true}); }
+
+function submit(){
+  const s = step(), v = G.typed;
+  const exact = MODE==='type' || G.reveal;
+  const r = exact ? (v===s.d ? {ok:1} : {err:'type'}) : check(v, s);
+  const shown = s.s ? '' : esc(v);
+  if (!r.ok){
+    term.classList.remove('shake'); void term.offsetWidth; term.classList.add('shake');
+    if (exact){ $('fb').className='fb bad'; $('fb').textContent = 'ยังไม่ตรง ลบตัวสีแดงแล้วพิมพ์ใหม่'; return; }
+    G.attempts++; G.missed.add(s.key);
+    addHist(`<span class="p">${esc(curPrompt())}</span><span class="c">${shown}</span>`, 'l bad');
+    const pad = ' '.repeat(curPrompt().length + (r.pos||0));
+    let msg = '', th = '';
+    if (r.err==='incomplete'){ msg = '% Incomplete command.'; th = 'คำสั่งยังไม่ครบ ยังขาดส่วนท้าย'; }
+    else if (r.err==='ambiguous'){ msg = `% Ambiguous command: "${r.have}"`; th = `<code>${esc(r.have)}</code> สั้นเกินไป IOS ไม่รู้ว่าหมายถึงคำไหน`; }
+    else if (r.err==='value'){ msg = pad+'^\n% Invalid input detected at \'^\' marker.'; th = `ใช้ <code>${esc(r.have)}</code> แต่โจทย์ต้องการ <code>${esc(r.want)}</code>`; }
+    else if (r.err==='secret'){ msg = '% Bad passwords'; th = 'รหัสไม่ถูก ลองดูในโจทย์อีกที'; }
+    else { msg = pad+'^\n% Invalid input detected at \'^\' marker.'; th = 'คำสั่งผิดตรงตำแหน่ง ^'; }
+    addHist(esc(msg), 'e');
+    if (G.attempts>=2 && !G.reveal){ G.reveal = true; th += ' — เฉลยขึ้นเป็นเงาแล้ว พิมพ์ตามได้เลย'; }
+    $('fb').className='fb bad'; $('fb').innerHTML = th;
+    G.typed=''; kb.value=''; renderLine(); scrollTerm();
+    return;
+  }
+  // success
+  if (G.tStep){ G.active += performance.now()-G.tStep; G.chars += s.d.length+1; G.tStep = 0; }
+  if (MODE==='recall'){
+    if (!G.missed.has(s.key)){ G.firstOk++; if (DB.weak[s.key]) DB.weak[s.key]--; }
+    else DB.weak[s.key] = (DB.weak[s.key]||0)+1;
+  }
+  addHist(`<span class="p">${esc(curPrompt())}</span><span class="c">${shown}</span>`, 'l');
+  (s.o||[]).forEach(o=>addHist(esc(o)||'&nbsp;', 'o'));
+  if (G.L.mixed) addHist('', 'gap');
+  G.i++;
+  scrollTerm();
+  if (G.i >= G.L.steps.length) return finish();
+  loadStep();
+}
+
+function finish(){
+  G.done = true;
+  $('prog').style.width = '100%';
+  const n = G.L.steps.length, key = G.L.id+'|'+MODE, prev = DB.best[key];
+  const time = Math.round(G.active/1000), mm = Math.floor(time/60), ss = String(time%60).padStart(2,'0');
+  let rec = false;
+  if (MODE==='type'){
+    const res = {wpm:wpm(), acc:acc()};
+    if (!prev || res.wpm > prev.wpm){ DB.best[key] = res; rec = !!prev; }
+  } else {
+    const res = {ok:G.firstOk, n};
+    if (!prev || res.ok/res.n > prev.ok/prev.n){ DB.best[key] = res; rec = !!prev; }
+  }
+  store.set(DB);
+  const missed = G.L.steps.filter(s=>G.missed.has(s.key));
+  const idx = LESSONS.findIndex(x=>x.id===G.L.id), next = LESSONS[idx+1];
+  const big = MODE==='type'
+    ? `<div><div class="v">${wpm()}<small>wpm</small></div><div class="k">ความเร็ว</div></div><div><div class="v">${acc()}<small>%</small></div><div class="k">ความแม่น</div></div><div><div class="v">${mm}:${ss}</div><div class="k">เวลาพิมพ์</div></div>`
+    : `<div><div class="v">${G.firstOk}<small>/ ${n}</small></div><div class="k">ถูกตั้งแต่ครั้งแรก</div></div><div><div class="v">${missed.length}</div><div class="k">คำสั่งที่พลาด</div></div><div><div class="v">${mm}:${ss}</div><div class="k">เวลา</div></div>`;
+  const head = MODE==='type'
+    ? (rec ? 'สถิติใหม่ของบทนี้' : 'จบบทแล้ว')
+    : (G.firstOk===n ? 'จำได้ครบทุกคำสั่ง' : 'จบบทแล้ว');
+  const sub = MODE==='type'
+    ? 'พิมพ์คล่องแล้วลองโหมด Recall ดูว่าจำได้เองไหม'
+    : (missed.length ? 'คำสั่งที่พลาดถูกเก็บไว้ในหมวด Weak spots แล้ว' : 'พร้อมสอบส่วนนี้แล้ว');
+  $('stage').hidden = true;
+  const R = $('result'); R.hidden = false;
+  R.innerHTML = `<h2>${head}</h2><p class="sub">${sub}</p><div class="big">${big}</div>
+    ${missed.length ? `<div class="missed">${missed.map(s=>`<div><code>${esc(s.d||'↵')}</code><span>${s.t.replace(/<[^>]+>/g,'')}</span></div>`).join('')}</div>` : ''}
+    <div class="actions">
+      <button class="btn primary" id="again">อีกรอบ</button>
+      <button class="btn" id="swap">${MODE==='type'?'ลองโหมด Recall':'กลับไปโหมด Type'}</button>
+      ${next && !G.L.mixed ? `<button class="btn" id="next">บทถัดไป: ${next.title}</button>` : ''}
+    </div>`;
+  $('again').onclick = ()=>start(G.L.id);
+  $('swap').onclick = ()=>{ setMode(MODE==='type'?'recall':'type'); start(G.L.id==='weak'&&!weakSteps().length?'mix':G.L.id); };
+  if ($('next')) $('next').onclick = ()=>start(next.id);
+  kb.blur();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function goHome(){ G = null; kb.blur(); $('play').hidden = true; $('home').hidden = false; renderList(); window.scrollTo(0,0); }
+$('backBtn').onclick = goHome;
+$('restartBtn').onclick = ()=>start(G.L.id);
+$('hintBtn').onclick = ()=>{ giveHint(); kb.focus({preventScroll:true}); };
+$('ansBtn').onclick = reveal;
+document.addEventListener('keydown', e=>{
+  if (!G || e.target===kb) return;
+  if (e.key==='Escape') goHome();
+  else if (e.key==='Enter' && G.done) start(G.L.id);
+});
+
+// keep the terminal above the on-screen keyboard
+function vv(){ const h = window.visualViewport ? visualViewport.height : innerHeight; root.style.setProperty('--vvh', h+'px'); if (G) placeCaret(); }
+(window.visualViewport||window).addEventListener('resize', vv); vv();
+addEventListener('resize', ()=>{ if (G) placeCaret(); });
+document.fonts && document.fonts.ready.then(()=>{ if (G) placeCaret(); });
+
+setMode(MODE);
+</script>
+</body>
+</html>
